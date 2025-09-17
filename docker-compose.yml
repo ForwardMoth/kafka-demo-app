@@ -1,0 +1,94 @@
+services:
+  kafka-consumer:
+    container_name: kafka-consumer
+    build:
+      context: ./kafka-consumer
+    ports:
+      - "${KAFKA_CONSUMER_APP_PORT}:8000"
+    environment:
+      SERVER_PORT: ${KAFKA_CONSUMER_APP_PORT}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: ${SPRING_KAFKA_CONSUMER_GROUP_ID}
+      SPRING_KAFKA_APP_TOPIC_NAME: ${SPRING_KAFKA_APP_TOPIC_NAME}
+    depends_on:
+      - kafka
+      - kafka-producer
+    networks:
+      - kafka-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/actuator/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  kafka-producer:
+    container_name: kafka-producer
+    build:
+      context: ./kafka-producer
+    ports:
+      - "${KAFKA_PRODUCER_APP_PORT}:8001"
+    environment:
+      SERVER_PORT: ${KAFKA_PRODUCER_APP_PORT}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_APP_TOPIC_NAME: ${SPRING_KAFKA_APP_TOPIC_NAME}
+      SPRING_KAFKA_APP_TOPIC_NUMBER_PARTITIONS: ${SPRING_KAFKA_APP_TOPIC_NUMBER_PARTITIONS}
+      SPRING_KAFKA_APP_TOPIC_REPLICATION_FACTOR: ${SPRING_KAFKA_APP_TOPIC_REPLICATION_FACTOR}
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/actuator/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+    networks:
+      - kafka-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    driver: bridge

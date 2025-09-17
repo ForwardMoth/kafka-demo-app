@@ -1,0 +1,9 @@
+server:
+  port: ${SERVER_PORT:8001}
+
+spring:
+  application:
+    name: kafka-producer
+
+  profiles:
+    include: kafka
