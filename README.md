@@ -97,8 +97,7 @@ Request:
 curl -X POST http://localhost:8080/kafka/send \
 -H "Content-Type: application/json" \
 -d '{
-"message": "Hello Kafka!",
-"sender": "test-user"
+"message": "My message"
 }'
 ```
 
