@@ -10,7 +10,7 @@ public class KafkaConsumer {
 
     @KafkaListener(topics = "${spring.kafka.app-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
     public void listener(String message) {
-        log.info("Received message: " + message);
+        log.info("Received message: {}", message);
     }
 
 }

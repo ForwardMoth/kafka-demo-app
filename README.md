@@ -94,7 +94,7 @@ Endpoint: ```POST /kafka/send```
 Request:
 
 ```bash
-curl -X POST http://localhost:8080/kafka/send \
+curl -X POST http://localhost:8001/kafka/send \
 -H "Content-Type: application/json" \
 -d '{
 "message": "My message"
